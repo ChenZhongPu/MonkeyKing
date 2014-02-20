@@ -6,3 +6,4 @@
 6. 作者：陈中普 交流邮箱：18789482356@163.com
 
 第一版程序下载 http://pan.baidu.com/s/1o6lWW2m
+第二版程序下载 http://pan.baidu.com/s/1dDHxwop

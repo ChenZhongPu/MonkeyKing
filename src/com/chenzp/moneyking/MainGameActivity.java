@@ -36,6 +36,8 @@ import org.cocos2d.types.CGSize;
 import org.cocos2d.types.ccColor4B;
 import org.cocos2d.utils.CCFormatter;
 
+
+import android.net.Uri;
 import android.os.Bundle;
 import android.R.integer;
 import android.app.Activity;
@@ -57,6 +59,8 @@ public class MainGameActivity extends Activity {
 
 	protected CCGLSurfaceView _glSurfaceView;
 	
+	CCScene scene;
+	
 	public static final String SCORETAG = "com.chenzp.moneyking.score";
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +78,9 @@ public class MainGameActivity extends Activity {
 		// 设置该Activity的View
 		_glSurfaceView = new CCGLSurfaceView(this);
 		setContentView(_glSurfaceView);
+		
+		
+	
 	}
 
 
@@ -81,6 +88,7 @@ public class MainGameActivity extends Activity {
 	protected void onStart() {
 
 		super.onStart();
+		Log.d("TEST", "处理start方法");
 		
 		CCDirector.sharedDirector().attachInView(_glSurfaceView);
 
@@ -88,12 +96,35 @@ public class MainGameActivity extends Activity {
 		
 		CCDirector.sharedDirector().setAnimationInterval(1.0f / 60.0f);
 
-		CCScene scene = GameLayer.scene();
+		scene = GameLayer.scene();
 		
 		CCDirector.sharedDirector().runWithScene(scene);
+	
 	}
 
+	@Override
+	public void onPause()
+	{
+		super.onPause();
+		Log.d("TEST", "处理pause方法");
+		CCDirector.sharedDirector().pause();
+	}
 	
+	@Override
+	public void onResume()
+	{
+		super.onResume();
+		Log.d("TEST", "处理resume方法");
+		CCDirector.sharedDirector().resume();
+	}
+	
+	@Override
+	public void onStop()
+	{
+		super.onStop();
+		Log.d("TEST", "处理stop方法");
+		CCDirector.sharedDirector().end();
+	}
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -109,11 +140,6 @@ public class MainGameActivity extends Activity {
 	}
 
 
-	public static void test()
-	{
-		Log.d("TEST", "草才草草");
-		//Toast.makeText(this, "再按一次您就退出美猴王", Toast.LENGTH_SHORT).show()
-	}
 
 	/**
 	 * 内部类，表示游戏布景层
@@ -199,6 +225,21 @@ public class MainGameActivity extends Activity {
 		public static final int BEST = 6;
 		
 		/**
+		 * 该变量用于调整游戏难度
+		 */
+		private float K = 6.0f;  
+		
+		/**
+		 * 游戏难度上升率，因为从10秒到110秒进行 6 -> 2.
+		 */
+		public static final float RATE = 0.04f;
+		
+		/**
+		 * 标识是否进入很难的的等级。
+		 */
+		private boolean HARD = false;
+		
+		/**
 		 * 静态方法，返回GameLayer的场景(Scene)
 		 * 
 		 * @return
@@ -222,13 +263,15 @@ public class MainGameActivity extends Activity {
 			MPOINT = CGPoint.ccp(WINSIZE.width / 2, WINSIZE.height / 2);
 			visibleBads = new ArrayList<CCSprite>();
 			app = CCDirector.sharedDirector().getActivity();
-			// 平均1秒下降280高度
-			float fallDuration = WINSIZE.height / 280;
+			// 平均1秒下降350高度
+			float fallDuration = WINSIZE.height / 350;
 			// 下降
 			CCMoveBy fallMoveBy = CCMoveBy.action(fallDuration, CGPoint.ccp(0, - WINSIZE.height));
 			fall = CCEaseIn.action(fallMoveBy, 2.0f);
 			scorePreferences = app.getSharedPreferences(SCORETAG, Context.MODE_PRIVATE);
 			sharpFall = CCMoveBy.action(1.0f, CGPoint.ccp(0, -WINSIZE.height));
+			
+			
 			
 			//预加载音频
 			SoundEngine.sharedEngine().preloadEffect(app, R.raw.click);
@@ -349,9 +392,10 @@ public class MainGameActivity extends Activity {
 		// 1. 关于菜单
 		public void toAbout(Object sender){
 			Log.d("TEXT", "关于菜单。。");
-			System.out.println("关于菜单。。");
-			Context context = CCDirector.sharedDirector().getActivity();
-			SoundEngine.sharedEngine().playEffect(context, R.raw.click);
+			Uri webpage = Uri.parse("https://github.com/ChenZhongPu/MonkeyKing");
+			Intent webIntent = new Intent(Intent.ACTION_VIEW, webpage);
+			app.startActivity(webIntent);
+			
 		}
 		// 2. 分享菜单
 		public void toShare(Object sender){
@@ -390,6 +434,9 @@ public class MainGameActivity extends Activity {
 		// 4. 重新开始菜单
 		public void restart(Object sender){
 			Log.d("TEST", "重新开始");
+			 
+			// 重置游戏难度
+			K = 6;
 			
 			// 分数置为0
 			time = 0;
@@ -457,18 +504,50 @@ public class MainGameActivity extends Activity {
 				// 加入到spriteSheet
 				spriteSheet.addChild(bad);
 	
-				if(badIndex == 5 || badIndex == 1 || badIndex == 6)
+				// 在不是很难的时候的难度调节
+				if(!HARD)
 				{
-					// 为提高游戏难度，在屏幕的上部增加妖怪
+					if(badIndex == 1 || badIndex == 3)
+					{
+						
+						Log.d("TEST", "5,6增加上面的妖怪");
+						int keyBadIndex = random.nextInt(6) + 1;
+						CCSprite keyBad = CCSprite.sprite("bad"+keyBadIndex+".png", true);
+						
+						int actualKeyY = random.nextInt(150) + (int)WINSIZE.height - 150;
+						keyBad.setPosition(CGPoint.ccp(WINSIZE.width + 10, actualKeyY));
+						
+						keyBad.runAction(badSequence.copy());
+						spriteSheet.addChild(keyBad);
+					}
+					
+					else if(badIndex == 5){
+						Log.d("TEST", "5,6增加下面的妖怪");
+						int keyBadIndex = random.nextInt(6) + 1;
+						CCSprite keyBad = CCSprite.sprite("bad"+keyBadIndex+".png", true);
+						
+						int actuaKeyY = random.nextInt(150) + (int) WINSIZE.height / 5;
+						keyBad.setPosition(CGPoint.ccp(WINSIZE.width + 10, actuaKeyY));
+						
+						keyBad.runAction(badSequence.copy());
+						spriteSheet.addChild(keyBad);
+					}
+				}
+				
+				if (badIndex == 2) {
+					Log.d("TEST", "增加中间的妖怪");
 					int keyBadIndex = random.nextInt(6) + 1;
 					CCSprite keyBad = CCSprite.sprite("bad"+keyBadIndex+".png", true);
 					
-					int actualKeyY = random.nextInt(150) + (int)WINSIZE.height - 150;
-					keyBad.setPosition(CGPoint.ccp(WINSIZE.width + 10, actualKeyY));
+					int keyMinY = (int) ((2 * WINSIZE.height) / 5.0);
+					int keyMaxY = (int) ((3 * WINSIZE.height) / 5.0);
+					int actuaKeyY = random.nextInt(keyMaxY - keyMinY) + keyMinY;
+					keyBad.setPosition(CGPoint.ccp(WINSIZE.width + 10, actuaKeyY));
 					
 					keyBad.runAction(badSequence.copy());
 					spriteSheet.addChild(keyBad);
 				}
+		
 			}
 			
 		}
@@ -491,12 +570,28 @@ public class MainGameActivity extends Activity {
 			// 在游戏进行中时才检测
 			if(isOn)
 			{
+			//	Log.d("TEST", "ison...");
 				time += dt;
 				// 更新分数
 				String string = CCFormatter.format("%2.3f", time / 10);
 				CCBitmapFontAtlas label =
 						(CCBitmapFontAtlas) getChildByTag(TIMETAG);
 				label.setString(string);
+				
+				// 根据当前分数来调节游戏难度，即修改k的值
+				
+				// 大于10秒(1分)时增加游戏难度
+		        if (time > 10 && time < 110) {
+					
+		        	K = 6 - RATE * (time - 10);
+		        	Log.d("TEST", K + "新的K");
+				}
+		        
+		        // 如果k<2.5则进入很难的阶段
+		        if(HARD == false && K < 2.5f)
+		        {
+		        	HARD = true;
+		        }
 				
 				// 如果猴子掉到地面（1/5 屏幕高)
 				if(monkey.getPosition().y <= WINSIZE.height / 5)
@@ -570,10 +665,14 @@ public class MainGameActivity extends Activity {
 				// 检测碰撞
 				if(visibleBads.size() > 0)
 				{
+					CGRect monkeyRect = CGRect.make(monkey.getPosition().x - monkey.getContentSize().width / K ,
+							monkey.getPosition().y - monkey.getContentSize().height / K,
+							(monkey.getContentSize().width / K) * 2,
+							(monkey.getContentSize().height / K) * 2);
 					for(CCSprite sprite : visibleBads)
 					{
 						// 发生了碰撞
-						if(CGRect.intersects(monkey.getBoundingBox(), sprite.getBoundingBox()))
+						if(CGRect.intersects(monkeyRect, sprite.getBoundingBox()))
 						{
 							SoundEngine.sharedEngine().playEffect(app, R.raw.bang);
 							gameOver = true;

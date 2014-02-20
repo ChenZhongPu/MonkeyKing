@@ -235,6 +235,19 @@ public class MainGameActivity extends Activity {
 		public static final float RATE = 0.04f;
 		
 		/**
+		 * 测试适应分辨率<br/>
+		 * X_K，Y_K的依据是猴子是：180*145；而测试良好的屏幕为1280*720
+		 */
+		public static final float X_K = 180.0f / 1280.0f;
+		public static final float Y_K = 145.0f / 720.0f;
+		
+		/**
+		 * 测试良好的屏幕为1280*720
+		 */
+		public static final float WELL_X = 1280.0f;
+		public static final float WELL_Y = 720.f;
+		
+		/**
 		 * 标识是否进入很难的的等级。
 		 */
 		private boolean HARD = false;
@@ -263,8 +276,9 @@ public class MainGameActivity extends Activity {
 			MPOINT = CGPoint.ccp(WINSIZE.width / 2, WINSIZE.height / 2);
 			visibleBads = new ArrayList<CCSprite>();
 			app = CCDirector.sharedDirector().getActivity();
-			// 平均1秒下降350高度
-			float fallDuration = WINSIZE.height / 350;
+			
+			// 两秒内下载屏幕高
+			float fallDuration = 2.0f;
 			// 下降
 			CCMoveBy fallMoveBy = CCMoveBy.action(fallDuration, CGPoint.ccp(0, - WINSIZE.height));
 			fall = CCEaseIn.action(fallMoveBy, 2.0f);
@@ -278,15 +292,22 @@ public class MainGameActivity extends Activity {
 			SoundEngine.sharedEngine().preloadEffect(app, R.raw.bang);
 			
 
-			Log.d("TEST", WINSIZE.width+" -- "+WINSIZE.height);
+			Log.d("TEST", "屏幕大小"+WINSIZE.width+" -- "+WINSIZE.height);
 			// 游戏背景
 			CCSprite bg = CCSprite.sprite("bg.png");
-			bg.setPosition(CGPoint.ccp(WINSIZE.width / 2, WINSIZE.height / 5 + 500));
+			
+			bg.setScale(WINSIZE.height / WELL_Y);
+			
+			bg.setPosition(CGPoint.ccp(WINSIZE.width / 2, WINSIZE.height / 5 + (WINSIZE.height / WELL_Y) * bg.getContentSize().height / 2));
 			addChild(bg);
 			
-			// 游戏地面,占屏幕 1/4高.屏幕不能高于1000.
+			// 游戏地面,占屏幕 1/5高.屏幕不能高于1000.
 			ground = CCSprite.sprite("ground.png");
-			ground.setPosition(CGPoint.ccp(WINSIZE.width / 2, WINSIZE.height / 5 - 100));
+			//Log.d("TEST", "旧的地面" + ground.getContentSize().height);
+			   // 针对小屏来调整
+			ground.setScale(WINSIZE.height / WELL_Y);
+		//	Log.d("TEST", "新的地面" + ground.getContentSize().height);
+			ground.setPosition(CGPoint.ccp(WINSIZE.width / 2, WINSIZE.height / 5 - (WINSIZE.height / WELL_Y) * ground.getContentSize().height / 2));
 			addChild(ground,2);
 			
 			// 地面移动效果
@@ -302,11 +323,15 @@ public class MainGameActivity extends Activity {
 			// 2, 初始化批处理精灵，通过加载.png文件 (新版的CCSpriteSheet叫CCSpriteBatchNode)
 			spriteSheet = CCSpriteSheet
 					.spriteSheet("monkey_packer.png");
+			
+			//spriteSheet.setScale(WINSIZE.height / WELL_Y);
 			// 3. 将该批处理精灵作为布景层的子节点
 			addChild(spriteSheet, 1, SHEETTAG);
 
 			monkey = CCSprite.sprite("monkey1.png", true);
+			monkey.setScale(WINSIZE.height / WELL_Y);
 			monkey.setPosition(MPOINT);
+			
 			spriteSheet.addChild(monkey, 1, MONKEYTAG);
 			
 			
@@ -332,35 +357,47 @@ public class MainGameActivity extends Activity {
 			// 云团
 			cloud = CCSprite.sprite("cloud.png", true);
 			cloud.setPosition(CGPoint.ccp(WINSIZE.width / 2, WINSIZE.height / 2 - 70));
+			cloud.setScale(WINSIZE.height / WELL_Y);
 			addChild(cloud);
 			
 			// 初始化屏幕菜单
 		    CCSprite aboutSprite = CCSprite.sprite("about.png", true);
+		    aboutSprite.setScale(WINSIZE.height / WELL_Y);
 		    CCMenuItemSprite aboutItem = CCMenuItemSprite.item(aboutSprite, aboutSprite, this, "toAbout");
+		    aboutItem.setScale(WINSIZE.height / WELL_Y);
 		    
 		    CCSprite shareSprite = CCSprite.sprite("share.png", true);
+		    shareSprite.setScale(WINSIZE.height / WELL_Y);
 		    CCMenuItemSprite shareItem = CCMenuItemSprite.item(shareSprite, shareSprite, this, "toShare");
+		    shareItem.setScale(WINSIZE.height / WELL_Y);
 		    
 		    CCSprite exitSprite = CCSprite.sprite("exit.png", true);
+		    exitSprite.setScale(WINSIZE.height / WELL_Y);
 		    CCMenuItemSprite exitItem = CCMenuItemSprite.item(exitSprite, exitSprite, this, "toExit");
+		    exitItem.setScale(WINSIZE.height / WELL_Y);
 		    
 		    CCMenu screenMenu = CCMenu.menu(aboutItem,shareItem,exitItem);
-		    screenMenu.alignItemsHorizontally(100);
-		    screenMenu.setPosition(WINSIZE.width / 2 ,60);
+		    screenMenu.alignItemsHorizontally(100 * WINSIZE.width / WELL_X);
+		    screenMenu.setPosition(WINSIZE.width / 2 ,60 * WINSIZE.height / WELL_Y);
 		    addChild(screenMenu,3);
 		    
 		    // 显示时间，也就是分数
 		    CCBitmapFontAtlas timeLabel = CCBitmapFontAtlas.bitmapFontAtlas("0.0", "bitmapFontTest.fnt");
 		    addChild(timeLabel,5,TIMETAG);
-		    timeLabel.setScale(1.5f);
+		    timeLabel.setScale(1.5f * WINSIZE.height / WELL_Y);
 		    timeLabel.setPosition(CGPoint.ccp(150, WINSIZE.height - 100));
 		    
 		    // 弹出菜单,开始看不见
 		    CCSprite popMenu = CCSprite.sprite("pop_menu.png",true);
 		    popMenu.setPosition(CGPoint.ccp(WINSIZE.width / 2, -150));
+		    popMenu.setScale(WINSIZE.height / WELL_Y);
+		    
 		    // 重新开始菜单项
 		    CCSprite restartSprite = CCSprite.sprite("start.png", true);
+		    restartSprite.setScale(WINSIZE.height / WELL_Y);
 		    CCMenuItemSprite restartItem = CCMenuItemSprite.item(restartSprite, restartSprite, this, "restart");
+		    restartItem.setScale(WINSIZE.height / WELL_Y);
+		    
 		    CCMenu reStartMenu = CCMenu.menu(restartItem);
 		    popMenu.addChild(reStartMenu);
 		    // 设置重新开始按钮的位置
@@ -491,7 +528,7 @@ public class MainGameActivity extends Activity {
 				int actualY = random.nextInt(badMaxY - badMinY) + badMinY;
 				
 				bad.setPosition(CGPoint.ccp(WINSIZE.width + 10, actualY));
-				
+				bad.setScale(WINSIZE.height / WELL_Y);
 			
 				
 				// 妖怪的动作
@@ -516,7 +553,7 @@ public class MainGameActivity extends Activity {
 						
 						int actualKeyY = random.nextInt(150) + (int)WINSIZE.height - 150;
 						keyBad.setPosition(CGPoint.ccp(WINSIZE.width + 10, actualKeyY));
-						
+						keyBad.setScale(WINSIZE.height / WELL_Y);
 						keyBad.runAction(badSequence.copy());
 						spriteSheet.addChild(keyBad);
 					}
@@ -528,7 +565,7 @@ public class MainGameActivity extends Activity {
 						
 						int actuaKeyY = random.nextInt(150) + (int) WINSIZE.height / 5;
 						keyBad.setPosition(CGPoint.ccp(WINSIZE.width + 10, actuaKeyY));
-						
+						keyBad.setScale(WINSIZE.height / WELL_Y);
 						keyBad.runAction(badSequence.copy());
 						spriteSheet.addChild(keyBad);
 					}
@@ -543,7 +580,7 @@ public class MainGameActivity extends Activity {
 					int keyMaxY = (int) ((3 * WINSIZE.height) / 5.0);
 					int actuaKeyY = random.nextInt(keyMaxY - keyMinY) + keyMinY;
 					keyBad.setPosition(CGPoint.ccp(WINSIZE.width + 10, actuaKeyY));
-					
+					keyBad.setScale(WINSIZE.height / WELL_Y);
 					keyBad.runAction(badSequence.copy());
 					spriteSheet.addChild(keyBad);
 				}

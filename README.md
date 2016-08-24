@@ -3,7 +3,6 @@
 3. 参考了FlappyBird的设计。
 4. 使用了Cocos2d-android-1引擎。
 5. 在写代码时，误将MonkeyKing写成了moneyKing(包名里)
-6. 作者：陈中普 交流邮箱：chenloveit@163.com
 
 第一版程序下载 http://pan.baidu.com/s/1o6lWW2m
 
